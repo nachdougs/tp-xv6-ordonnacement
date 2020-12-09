@@ -26,8 +26,6 @@ static void wakeup1(struct proc *chan);
 
 extern char trampoline[]; // trampoline.S
 
-/* Solution insert et remove
-
 // Needs lock on p and prio_lock[p->priority]
 void insert_into_prio_queue(struct proc* p){
   struct list_proc* new = bd_malloc(sizeof(struct list_proc));
@@ -67,7 +65,6 @@ void remove_from_prio_queue(struct proc* p){
 
   prio[p->priority] = head;
 }
- */
 
 void
 procinit(void)

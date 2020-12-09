@@ -14,4 +14,6 @@ struct spinlock {
   uint nts;
 };
 
+void dump_locks();
+
 #endif

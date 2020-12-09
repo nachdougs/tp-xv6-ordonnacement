@@ -168,6 +168,9 @@ consoleintr(int c)
   case C('Q'):  // Print priority list
     priodump();
     break;
+  case C('L'):
+    dump_locks();
+    break;
   case C('U'):  // Kill line.
     while(cons->e != cons->w &&
           cons->buf[(cons->e-1) % INPUT_BUF] != '\n'){
