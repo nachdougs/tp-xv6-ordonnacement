@@ -13,6 +13,7 @@ struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
 
+// Priority table $\label{proc.c:lprio}$
 struct list_proc* prio[NPRIO];
 struct spinlock prio_lock;
 
