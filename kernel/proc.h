@@ -115,9 +115,11 @@ struct proc {
   char* cmd;
 };
 
+// $\label{proc.h:lproc-begin}$
 struct list_proc {
   struct proc* p;
   struct list_proc* next;
 };
+// $\label{proc.h:lproc-end}$
 
 #endif
