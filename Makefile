@@ -188,7 +188,7 @@ docker-qemu:
 	docker run --rm --user $(shell id -u):$(shell id -g) --name os-container -v $(shell pwd):/data -it pwilke/os-infosec ${MAKE} qemu ${MAKEFLAGS}
 
 docker-qemu-gdb:
-	docker run --rm --user $(shell id -u):$(shell id -g) --name os-container -p 25000-26500:25000-26500 -v $(shell pwd):/data -it pwilke/os-infosec ${MAKE} qemu-gdb ${MAKEFLAGS}
+	docker run --rm --user $(shell id -u):$(shell id -g) --name os-container -p 26000-26003:26000-26003 -v $(shell pwd):/data -it pwilke/os-infosec ${MAKE} qemu-gdb ${MAKEFLAGS}
 
 ##
 ##  FOR submitting lab solutions
