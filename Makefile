@@ -190,6 +190,12 @@ docker-qemu:
 docker-qemu-gdb:
 	docker run --rm --user $(shell id -u):$(shell id -g) --name os-container -p 26000-26003:26000-26003 -v "$(shell pwd)":/data -it pwilke/os-infosec make qemu-gdb ${MAKEFLAGS}
 
+ifndef ACT
+ACT := default
+endif
+eval:
+	./run_docker.sh $(ACT)
+
 ##
 ##  FOR submitting lab solutions
 ##

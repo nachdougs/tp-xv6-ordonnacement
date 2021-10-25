@@ -147,6 +147,7 @@ main(int argc, char* argv[])
 {
   static char buf[100];
   int fd;
+  int lastretval = 0;
 
   if (argc < 2){
     printf("expected one argument, got argc=%d\n", argc);
@@ -170,9 +171,13 @@ main(int argc, char* argv[])
         fprintf(2, "cannot cd %s\n", buf+3);
       continue;
     }
+    if(buf[0] == 'r' && buf[1] == 'v' && buf[2] == '\n'){
+      fprintf(2, "retval = %d\n", lastretval);
+      continue;
+    }
     if(fork1() == 0)
       runcmd(parsecmd(buf));
-    wait(0);
+    wait(&lastretval);
   }
   exit(0);
 }
