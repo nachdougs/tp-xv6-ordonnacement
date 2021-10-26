@@ -199,6 +199,8 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+
+  remove_from_prio_queue(p);
 }
 
 // Create a page table for a given process,
@@ -254,6 +256,8 @@ userinit(void)
 {
   struct proc *p;
 
+  acquire(&prio_lock);
+
   p = allocproc();
   initproc = p;
   
@@ -271,7 +275,10 @@ userinit(void)
   p->cwd = namei("/");
   p->state = RUNNABLE;
 
+  insert_into_prio_queue(initproc);
+
   release(&p->lock);
+  release(&prio_lock);
 }
 
 // Grow or shrink user memory by n bytes.
@@ -302,6 +309,8 @@ fork(void)
   int i, pid;
   struct proc *np;
   struct proc *p = myproc();
+
+  acquire(&prio_lock);
 
   // Allocate process.
   if((np = allocproc()) == 0){
@@ -336,7 +345,10 @@ fork(void)
 
   np->state = RUNNABLE;
 
+  insert_into_prio_queue(np);
+
   release(&np->lock);
+  release(&prio_lock);
 
   return pid;
 }
@@ -456,6 +468,7 @@ wait(uint64 addr)
       if(np->parent == p){
         // np->parent can't change between the check and the acquire()
         // because only the parent changes it, and we're the parent.
+        acquire(&prio_lock);
         acquire(&np->lock);
         havekids = 1;
         if(np->state == ZOMBIE){
@@ -473,6 +486,7 @@ wait(uint64 addr)
           return pid;
         }
         release(&np->lock);
+        release(&prio_lock);
       }
     }
 
