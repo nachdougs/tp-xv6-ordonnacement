@@ -13,6 +13,7 @@ struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
 
+// Priority table $\label{proc.c:lprio}$
 struct list_proc* prio[NPRIO];
 struct spinlock prio_lock;
 
@@ -25,8 +26,6 @@ extern void forkret(void);
 static void wakeup1(struct proc *chan);
 
 extern char trampoline[]; // trampoline.S
-
-/* Solution insert et remove
 
 // Needs lock on p and prio_lock[p->priority]
 void insert_into_prio_queue(struct proc* p){
@@ -67,7 +66,6 @@ void remove_from_prio_queue(struct proc* p){
 
   prio[p->priority] = head;
 }
- */
 
 void
 procinit(void)
