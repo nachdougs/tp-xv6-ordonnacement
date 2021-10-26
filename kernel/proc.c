@@ -505,15 +505,15 @@ wait(uint64 addr)
 struct
 proc* pick_highest_priority_runnable_proc() {
   for (int i=0; i<10; i++) {
-    struct list_proc* liste_prio = prio[i];
     acquire(&prio_lock);
-    while(liste_prio && liste_prio->next){
-      liste_prio = liste_prio->next;
+    struct list_proc* liste_prio = prio[i];
+    while(liste_prio){
       acquire(&liste_prio->p->lock);
       if (liste_prio->p->state == RUNNABLE) {
         return liste_prio->p;
       }
       release(&liste_prio->p->lock);
+      liste_prio = liste_prio->next;
     }
     release(&prio_lock);
   }
@@ -544,27 +544,23 @@ scheduler(void)
     // cause a lost wakeup.
     intr_off();
 
-    // int found = 0;
-    p = pick_highest_priority_runnable_proc();
-    if (p != 0) {
-      // Switch to chosen process.  It is the process's job
-      // to release its lock and then reacquire it
-      // before jumping back to us.
-      p->state = RUNNING;
-      c->proc = p;
+    int found = 0;
+    for(p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if(p->state == RUNNABLE) {
+        // Switch to chosen process.  It is the process's job
+        // to release its lock and then reacquire it
+        // before jumping back to us.
+        p->state = RUNNING;
+        c->proc = p;
+        swtch(&c->scheduler, &p->context);
 
-      remove_from_prio_queue(p);
-      insert_into_prio_queue(p);
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
 
-      release(&prio_lock);
-
-      swtch(&c->scheduler, &p->context);
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
-
-      // found = 1;
+        found = 1;
+      }
 
       // ensure that release() doesn't enable interrupts.
       // again to avoid a race between interrupt and WFI.
@@ -572,13 +568,9 @@ scheduler(void)
 
       release(&p->lock);
     }
-    else {
+    if(found == 0){
       asm volatile("wfi");
     }
-
-    // if(found == 0){
-    //   asm volatile("wfi");
-    // }
   }
 }
 
