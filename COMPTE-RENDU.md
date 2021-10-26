@@ -7,4 +7,4 @@ insert_into_prio_queue() :
  - fork()
 
 remove_from_prio_queue() :
-
+ - exit()

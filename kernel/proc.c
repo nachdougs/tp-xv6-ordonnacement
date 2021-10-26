@@ -199,8 +199,6 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
-
-  remove_from_prio_queue(p);
 }
 
 // Create a page table for a given process,
@@ -427,6 +425,7 @@ exit(int status)
   // the parent-then-child rule says we have to lock it first.
   acquire(&original_parent->lock);
 
+  acquire(&prio_lock);
   acquire(&p->lock);
 
   // Give any children to init.
@@ -437,6 +436,10 @@ exit(int status)
 
   p->xstate = status;
   p->state = ZOMBIE;
+
+  remove_from_prio_queue(p);
+
+  release(&prio_lock);
 
   release(&original_parent->lock);
 
@@ -468,7 +471,6 @@ wait(uint64 addr)
       if(np->parent == p){
         // np->parent can't change between the check and the acquire()
         // because only the parent changes it, and we're the parent.
-        acquire(&prio_lock);
         acquire(&np->lock);
         havekids = 1;
         if(np->state == ZOMBIE){
@@ -486,7 +488,6 @@ wait(uint64 addr)
           return pid;
         }
         release(&np->lock);
-        release(&prio_lock);
       }
     }
 
