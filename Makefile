@@ -44,9 +44,9 @@ TOOLPREFIX := $(shell if riscv64-unknown-elf-objdump -i 2>&1 | grep 'elf64-big' 
 	elif riscv64-linux-gnu-objdump -i 2>&1 | grep 'elf64-big' >/dev/null 2>&1; \
 	then echo 'riscv64-linux-gnu-'; \
 	else echo "***" 1>&2; \
-	echo "*** Error: Couldn't find an riscv64 version of GCC/binutils." 1>&2; \
-	echo "*** To turn off this error, run 'gmake TOOLPREFIX= ...'." 1>&2; \
-	echo "***" 1>&2; exit 1; fi)
+	echo "*** Warning: Couldn't find an riscv64 version of GCC/binutils." 1>&2; \
+	echo "*** If you try to build the kernel without using docker, that won't work!" 1>&2; \
+	echo "***" 1>&2; fi)
 endif
 
 QEMU = qemu-system-riscv64
