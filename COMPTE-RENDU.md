@@ -17,3 +17,31 @@ On a tapé la commande `nice 10 9` où 10 est le PID de la fonction `print D`.
 ## Question 3.5
 
 Lorsqu'on repasse sur la console 0, on voit quand même un nombre important de D : la priorisation semble ne pas être correctement implémentée.
+
+## Question 4.1
+
+Lorsqu'on lance la commande `mutest`, on obtient les résultats suivants (tronqués) :
+
+```
+Fils, tu m'attendras
+Fils, tu m'attendras
+Fils, tu m'attendras
+Fils, tu m'attendras
+Oui, père.
+Fils, tu m'attendras
+Fils, tu m'attendras
+Fils, tu m'attendras
+```
+
+On observe que le fils arrive à répondre au père, ce qui ne devrait pas se produire si les mutex étaient correctement implémentés. \
+En effet, le fils ne peut réaliser sa tâche qu'une fois la tâche du père terminée.
+
+## Question 4.2
+
+Lorsqu'on lance la commande `mutest2`, on obtient les résultats suivants (tronqués) :
+
+```
+$ mutest2
+Result = 111
+```
+On constate que le résultat n'est pas celui attendu `Result = 100` car les deux processus tentent d'incrémenter (respectivement décrémenter) la même variable. Si les mutex étaient bien implémentés, ce problème n'apparaîtrait pas.
