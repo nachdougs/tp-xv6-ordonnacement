@@ -802,5 +802,17 @@ void priodump(void){
 int 
 nice(int pid, int priority)
 {
-  return -1;
+  for (int i=0; i<10; i++) {
+    struct list_proc* liste_prio = prio[i];
+    while(liste_prio){
+      if (liste_prio->p->pid == pid) {
+        liste_prio->p->priority = priority;
+        remove_from_prio_queue(liste_prio->p);
+        insert_into_prio_queue(liste_prio->p);
+        return 1;
+      }
+      liste_prio = liste_prio->next;
+    }
+  }
+  return 0;
 }
