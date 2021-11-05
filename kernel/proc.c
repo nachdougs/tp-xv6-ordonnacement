@@ -254,6 +254,8 @@ userinit(void)
 {
   struct proc *p;
 
+  acquire(&prio_lock);
+
   p = allocproc();
   initproc = p;
   
@@ -271,7 +273,10 @@ userinit(void)
   p->cwd = namei("/");
   p->state = RUNNABLE;
 
+  insert_into_prio_queue(initproc);
+
   release(&p->lock);
+  release(&prio_lock);
 }
 
 // Grow or shrink user memory by n bytes.
@@ -302,6 +307,8 @@ fork(void)
   int i, pid;
   struct proc *np;
   struct proc *p = myproc();
+
+  acquire(&prio_lock);
 
   // Allocate process.
   if((np = allocproc()) == 0){
@@ -336,7 +343,10 @@ fork(void)
 
   np->state = RUNNABLE;
 
+  insert_into_prio_queue(np);
+
   release(&np->lock);
+  release(&prio_lock);
 
   return pid;
 }
@@ -415,6 +425,7 @@ exit(int status)
   // the parent-then-child rule says we have to lock it first.
   acquire(&original_parent->lock);
 
+  acquire(&prio_lock);
   acquire(&p->lock);
 
   // Give any children to init.
@@ -425,6 +436,10 @@ exit(int status)
 
   p->xstate = status;
   p->state = ZOMBIE;
+
+  remove_from_prio_queue(p);
+
+  release(&prio_lock);
 
   release(&original_parent->lock);
 
@@ -487,6 +502,25 @@ wait(uint64 addr)
   }
 }
 
+struct
+proc* pick_highest_priority_runnable_proc() {
+  for (int i=0; i<10; i++) {
+    acquire(&prio_lock);
+    struct list_proc* liste_prio = prio[i];
+    while(liste_prio){
+      acquire(&liste_prio->p->lock);
+      if (liste_prio->p->state == RUNNABLE) {
+        return liste_prio->p;
+      }
+      release(&liste_prio->p->lock);
+      liste_prio = liste_prio->next;
+    }
+    release(&prio_lock);
+  }
+  return 0;
+}
+
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -510,23 +544,24 @@ scheduler(void)
     // cause a lost wakeup.
     intr_off();
 
-    int found = 0;
-    for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
-      if(p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->scheduler, &p->context);
+    p = pick_highest_priority_runnable_proc();
+    if (p != 0) {
+      // Switch to chosen process.  It is the process's job
+      // to release its lock and then reacquire it
+      // before jumping back to us.
+      p->state = RUNNING;
+      c->proc = p;
 
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
+      remove_from_prio_queue(p);
+      insert_into_prio_queue(p);
 
-        found = 1;
-      }
+      release(&prio_lock);
+
+      swtch(&c->scheduler, &p->context);
+
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
 
       // ensure that release() doesn't enable interrupts.
       // again to avoid a race between interrupt and WFI.
@@ -534,7 +569,8 @@ scheduler(void)
 
       release(&p->lock);
     }
-    if(found == 0){
+    else {
+      c->intena = 0;
       asm volatile("wfi");
     }
   }
@@ -761,4 +797,23 @@ void priodump(void){
     }
     printf("\n");
   }
+}
+
+int 
+nice(int pid, int priority)
+{
+  for (int i=0; i<10; i++) {
+    struct list_proc* liste_prio = prio[i];
+    while(liste_prio){
+      if (liste_prio->p->pid == pid) {
+        struct proc* newp = liste_prio->p;
+        remove_from_prio_queue(liste_prio->p);
+        newp->priority = priority;
+        insert_into_prio_queue(newp);
+        return 1;
+      }
+      liste_prio = liste_prio->next;
+    }
+  }
+  return 0;
 }
