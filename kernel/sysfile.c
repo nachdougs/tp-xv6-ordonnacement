@@ -486,7 +486,23 @@ sys_pipe(void)
 uint64
 sys_create_mutex(void)
 {
-  return -1;
+  int fd;
+  struct file *f;
+
+  if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){
+    if(f)
+      fileclose(f);
+    return -1;
+  }
+
+  f->type = FD_MUTEX;
+
+  struct sleeplock monMutex;
+  monMutex.locked = 0;
+  
+  f->mutex = monMutex;
+
+  return fd;
 }
 
 uint64
