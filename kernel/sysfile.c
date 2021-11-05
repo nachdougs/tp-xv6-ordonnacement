@@ -498,8 +498,8 @@ sys_create_mutex(void)
   f->type = FD_MUTEX;
 
   struct sleeplock monMutex;
-  monMutex.locked = 0;
-  
+  initsleeplock(&monMutex, "Mon Mutex");
+
   f->mutex = monMutex;
 
   return fd;
@@ -508,12 +508,28 @@ sys_create_mutex(void)
 uint64
 sys_acquire_mutex(void)
 {
+  struct file *f;
+
+  if(argfd(0, 0, &f) < 0 || f->type != FD_MUTEX){
+    return -1;
+  }
+
+  acquiresleep(&f->mutex);
   return 0;
 }
 
 uint64
 sys_release_mutex(void)
 {
+  struct file *f;
 
-  return 0;
+  if(argfd(0, 0, &f) < 0 || f->type != FD_MUTEX){
+    return -1;
+  }
+
+  if (f->mutex.locked > 0 && f->mutex.pid == myproc()->pid){
+    releasesleep(&f->mutex);
+    return 0;
+  }
+  return -1;
 }
