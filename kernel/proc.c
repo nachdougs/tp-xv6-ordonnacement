@@ -806,9 +806,10 @@ nice(int pid, int priority)
     struct list_proc* liste_prio = prio[i];
     while(liste_prio){
       if (liste_prio->p->pid == pid) {
-        liste_prio->p->priority = priority;
+        struct proc* newp = liste_prio->p;
         remove_from_prio_queue(liste_prio->p);
-        insert_into_prio_queue(liste_prio->p);
+        newp->priority = priority;
+        insert_into_prio_queue(newp);
         return 1;
       }
       liste_prio = liste_prio->next;
